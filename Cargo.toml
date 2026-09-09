@@ -1,0 +1,63 @@
+[package]
+name = "building_async"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = {version = "1.53.1", features = ["macros", "rt-multi-thread", "time", "net", "sync"]}
+mio = {version = "1", features = ["os-poll", "net"]}
+rand = "0.10.2"
+crossbeam-channel = "0.5.16"
+
+[[bin]]
+name = "1"
+path = "src/1_state_machine.rs"
+
+[[bin]]
+name = "2"
+path = "src/2_noobkio_runtime.rs"
+
+[[bin]]
+name = "3"
+path = "src/3_future_composition.rs"
+
+[[bin]]
+name = "4"
+path = "src/4_head_of_line_blocking.rs"
+
+[[bin]]
+name = "5"
+path = "src/5_mio.rs"
+
+[[bin]]
+name = "6"
+path = "src/6_mio_noobkio.rs"
+
+[[bin]]
+name = "7"
+path = "src/7_waker.rs"
+
+[[bin]]
+name = "8"
+path = "src/8_type_erased.rs"
+
+[[bin]]
+name = "9"
+path = "src/9_async_await.rs"
+
+[[bin]]
+name = "10"
+path = "src/10_pinning.rs"
+
+[[bin]]
+name = "11"
+path = "src/11_tokio.rs"
+
+[[bin]]
+name = "12"
+path = "src/12_blocking.rs"
+
+[[bin]]
+name = "fibers"
+path = "src/fibers.rs"
+
