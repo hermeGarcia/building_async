@@ -61,3 +61,7 @@ path = "src/12_blocking.rs"
 name = "fibers"
 path = "src/fibers.rs"
 
+[[bin]]
+name = "fibers_apple_silicon"
+path = "src/fibers_apple_silicon.rs"
+
