@@ -3,14 +3,10 @@ mod common;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, SyncSender};
-use std::task::{Wake, Waker};
+use std::task::{Context, Wake, Waker};
 use std::time::{Duration, Instant};
 
 use common::simple::{MyPoll, Sleep};
-
-pub trait MyFuture {
-    fn poll(&mut self, waker: &Waker) -> MyPoll;
-}
 
 struct NoobkioWaker {
     id: u64,
@@ -21,6 +17,10 @@ impl Wake for NoobkioWaker {
     fn wake(self: Arc<Self>) {
         self.sender.send(self.id).expect("executor dropped");
     }
+}
+
+pub trait MyFuture {
+    fn poll(&mut self, context: &Context) -> MyPoll;
 }
 
 struct Noobkio {
@@ -65,7 +65,7 @@ impl Noobkio {
                 sender: self.sender.clone(),
             }));
 
-            match future.as_mut().poll(&waker) {
+            match future.as_mut().poll(&Context::from_waker(&waker)) {
                 MyPoll::Pending => {
                     self.future_poll.insert(future_id, future);
                 }
@@ -81,12 +81,12 @@ impl Noobkio {
 }
 
 impl MyFuture for Sleep {
-    fn poll(&mut self, waker: &Waker) -> MyPoll {
+    fn poll(&mut self, context: &Context) -> MyPoll {
         let now = self.now.get_or_insert_with(Instant::now);
         let elapsed = now.elapsed();
 
         if elapsed < self.wait_for {
-            waker.wake_by_ref();
+            context.waker().wake_by_ref();
             MyPoll::Pending
         } else {
             MyPoll::Ready(String::with_capacity(0))
