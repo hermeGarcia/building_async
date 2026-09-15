@@ -204,7 +204,7 @@ fn main() {
 
     runtime.spawn(|| {
         println!("THREAD 1 STARTING");
-        for i in 0..10 {
+        for _ in 0..10 {
             yield_thread();
         }
         println!("THREAD 1 FINISHED");
@@ -212,7 +212,7 @@ fn main() {
 
     runtime.spawn(|| {
         println!("THREAD 2 STARTING");
-        for i in 0..15 {
+        for _ in 0..15 {
             yield_thread();
         }
         println!("THREAD 2 FINISHED");

@@ -7,6 +7,40 @@ use std::time::{Duration, Instant};
 
 use crate::common::type_erased::{MyFuture, RandomNumber, Sleep};
 
+struct NoobkioHandle<T> {
+    rcv: Option<Receiver<T>>,
+}
+
+impl<T> From<Receiver<T>> for NoobkioHandle<T> {
+    fn from(value: Receiver<T>) -> Self {
+        Self { rcv: Some(value) }
+    }
+}
+
+impl<T> MyFuture for NoobkioHandle<T> {
+    type Output = T;
+
+    fn poll(&mut self) -> Poll<Self::Output> {
+        let Some(rcv) = self.rcv.take() else {
+            return Poll::Pending;
+        };
+
+        match rcv.try_recv() {
+            Ok(v) => Poll::Ready(v),
+            Err(err) => {
+                println!("ERR: {err:?}");
+                self.rcv = Some(rcv);
+                Poll::Pending
+            }
+        }
+    }
+}
+
+enum Status<F: MyFuture> {
+    Running(F),
+    Finished,
+}
+
 struct Vtable {
     // Returns true if the future finished.
     poll: fn(NonNull<Header>) -> bool,
@@ -16,11 +50,6 @@ struct Vtable {
 #[repr(C)]
 struct Header {
     vtable: &'static Vtable,
-}
-
-enum Status<F: MyFuture> {
-    Running(F),
-    Finished,
 }
 
 #[repr(C)]
@@ -58,36 +87,9 @@ fn dealloc_erased<F: MyFuture>(ptr: NonNull<Header>) {
     drop(inner);
 }
 
-struct NoobkioHandle<T> {
-    rcv: Option<Receiver<T>>,
-}
-
-impl<T> From<Receiver<T>> for NoobkioHandle<T> {
-    fn from(value: Receiver<T>) -> Self {
-        Self { rcv: Some(value) }
-    }
-}
-
-impl<T> MyFuture for NoobkioHandle<T> {
-    type Output = T;
-
-    fn poll(&mut self) -> Poll<Self::Output> {
-        let Some(rcv) = self.rcv.take() else {
-            return Poll::Pending;
-        };
-
-        match rcv.try_recv() {
-            Ok(v) => Poll::Ready(v),
-            Err(err) => {
-                println!("ERR: {err:?}");
-                self.rcv = Some(rcv);
-                Poll::Pending
-            }
-        }
-    }
-}
-
 pub struct RawFuture {
+    /// Will always point to an [`InnerFuture`], meaning
+    /// that is safe to cast the pointer as such.
     ptr: NonNull<Header>,
 }
 
